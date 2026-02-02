@@ -1,0 +1,25 @@
+{
+  "name": "voix",
+  "version": "1.0.0",
+  "description": "Voximplant + Yandex SpeechKit test calls system",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "setup": "tsx scripts/setup.ts",
+    "upload": "tsx scripts/upload-scenarios.ts",
+    "call": "tsx scripts/make-call.ts",
+    "smart": "tsx scripts/smart-call.ts",
+    "mitya": "tsx scripts/mitya-call.ts",
+    "mitya11": "tsx scripts/mitya-elevenlabs-call.ts"
+  },
+  "dependencies": {
+    "@voximplant/apiclient-nodejs": "^3.0.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
