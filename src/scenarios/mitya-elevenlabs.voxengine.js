@@ -64,6 +64,13 @@ var silenceCount = 0;
 var currentPhraseIndex = 0;
 var usedFiller = false;
 
+// Webhook data
+var webhookUrl = '';
+var callPhone = '';
+var callStartTime = null;
+var callResult = 'unknown';
+var callDirection = 'outbound';
+
 VoxEngine.addEventListener(AppEvents.Started, function(e) {
   Logger.write('=== Mitya Assistant v8 (Aisha) ===');
 
@@ -84,6 +91,8 @@ VoxEngine.addEventListener(AppEvents.Started, function(e) {
       return s.trim() + '.';
     });
   }
+  if (data.webhookUrl) webhookUrl = data.webhookUrl;
+  if (data.phone) callPhone = data.phone;
 
   if (!data.phone) {
     Logger.write('No phone number');
@@ -99,12 +108,15 @@ VoxEngine.addEventListener(AppEvents.Started, function(e) {
   });
   call.addEventListener(CallEvents.Failed, function(e) {
     Logger.write('Call failed: ' + e.code);
+    callResult = 'no_answer';
+    sendWebhook('failed');
     VoxEngine.terminate();
   });
 });
 
 function onConnected(e) {
   Logger.write('Connected');
+  callStartTime = Date.now();
 
   createASR();
   canListen = false;
@@ -480,6 +492,37 @@ function callLLM(callback) {
   });
 }
 
+// Send call data to webhook
+function sendWebhook(status) {
+  if (!webhookUrl) {
+    Logger.write('No webhook URL configured');
+    return;
+  }
+
+  var duration = callStartTime ? Math.round((Date.now() - callStartTime) / 1000) : 0;
+
+  var payload = {
+    phone: callPhone,
+    direction: callDirection,
+    status: status,
+    duration: duration,
+    result: callResult,
+    transcript: conversationHistory
+  };
+
+  Logger.write('Sending webhook: ' + JSON.stringify(payload));
+
+  Net.httpRequestAsync(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    postData: JSON.stringify(payload)
+  }).then(function(res) {
+    Logger.write('Webhook sent: ' + res.code);
+  }).catch(function(err) {
+    Logger.write('Webhook error: ' + err);
+  });
+}
+
 function endConversation(msg) {
   if (isFinished) return;
   isFinished = true;
@@ -490,7 +533,20 @@ function endConversation(msg) {
     asr = null;
   }
 
-  Logger.write('END: ' + msg);
+  // Determine result from message
+  var lowerMsg = msg.toLowerCase();
+  if (lowerMsg.indexOf('записала') >= 0 || lowerMsg.indexOf('свяжется') >= 0) {
+    callResult = 'scheduled';
+  } else if (lowerMsg.indexOf('простите') >= 0 || lowerMsg.indexOf('не буду') >= 0) {
+    callResult = 'refused';
+  } else if (lowerMsg.indexOf('перезвон') >= 0) {
+    callResult = 'callback';
+  }
+
+  Logger.write('END: ' + msg + ' (result: ' + callResult + ')');
+
+  // Send webhook before ending
+  sendWebhook('completed');
 
   // Гарантированное завершение через 10 секунд
   var hangupTimer = setTimeout(function() {
