@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Call {
+  id            String   @id @default(cuid())
+  phone         String
+  direction     String   // "inbound" | "outbound"
+  status        String   // "completed" | "failed" | "no_answer"
+  duration      Int?     // seconds
+  result        String?  // "scheduled" | "refused" | "callback"
+  scheduledTime String?  // if appointment was made
+  transcript    Json?    // full conversation log
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([phone])
+  @@index([createdAt])
+}
+
+model Settings {
+  id            String   @id @default("default")
+  assistantName String   @default("Аиша")
+  voiceId       String   @default("rsotas5V9CH0fqkg0oNZ")
+  systemPrompt  String   @db.Text
+  greeting      String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

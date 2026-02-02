@@ -1,0 +1,38 @@
+# Dokploy configuration for VOIX Dashboard
+# This file configures automatic deployment from Git
+
+version: "1"
+
+services:
+  voix-dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    port: 3000
+    healthcheck:
+      path: /api/webhook
+      interval: 30s
+      timeout: 10s
+    environment:
+      - DATABASE_URL
+      - ADMIN_PASSWORD
+      - VOXIMPLANT_ACCOUNT_ID
+      - VOXIMPLANT_API_KEY
+      - VOXIMPLANT_RULE_ID
+      - CALLER_ID
+      - YANDEX_API_KEY
+      - YANDEX_FOLDER_ID
+      - ELEVENLABS_API_KEY
+      - WEBHOOK_URL
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=voix
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-voixpassword}
+      - POSTGRES_DB=voix
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
