@@ -10,7 +10,7 @@ export async function GET() {
       totalCalls,
       completedCalls,
       scheduledCalls,
-      callsByDay,
+      recentCalls,
       callsByResult,
       avgDuration,
     ] = await Promise.all([
@@ -20,14 +20,12 @@ export async function GET() {
       prisma.call.count({ where: { status: 'completed' } }),
       // Scheduled calls
       prisma.call.count({ where: { result: 'scheduled' } }),
-      // Calls by day (last 30 days)
-      prisma.$queryRaw`
-        SELECT DATE(created_at) as date, COUNT(*) as count
-        FROM "Call"
-        WHERE created_at >= ${thirtyDaysAgo}
-        GROUP BY DATE(created_at)
-        ORDER BY date ASC
-      ` as Promise<{ date: Date; count: bigint }[]>,
+      // Recent calls for chart (last 30 days)
+      prisma.call.findMany({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
       // Calls by result
       prisma.call.groupBy({
         by: ['result'],
@@ -40,16 +38,24 @@ export async function GET() {
       }),
     ])
 
+    // Group calls by day
+    const callsByDayMap = new Map<string, number>()
+    recentCalls.forEach((call) => {
+      const dateStr = call.createdAt.toISOString().split('T')[0]
+      callsByDayMap.set(dateStr, (callsByDayMap.get(dateStr) || 0) + 1)
+    })
+    const callsByDay = Array.from(callsByDayMap.entries()).map(([date, count]) => ({
+      date,
+      count,
+    }))
+
     return NextResponse.json({
       totalCalls,
       completedCalls,
       scheduledCalls,
       conversionRate: totalCalls > 0 ? (scheduledCalls / totalCalls) * 100 : 0,
       avgDuration: avgDuration._avg.duration || 0,
-      callsByDay: callsByDay.map((item) => ({
-        date: item.date,
-        count: Number(item.count),
-      })),
+      callsByDay,
       callsByResult: callsByResult.map((item) => ({
         result: item.result || 'unknown',
         count: item._count,
