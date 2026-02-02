@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://voix:voixpassword@postgres:5432/voix
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - VOXIMPLANT_ACCOUNT_ID=${VOXIMPLANT_ACCOUNT_ID}
+      - VOXIMPLANT_API_KEY=${VOXIMPLANT_API_KEY}
+      - VOXIMPLANT_RULE_ID=${VOXIMPLANT_RULE_ID}
+      - CALLER_ID=${CALLER_ID}
+      - YANDEX_API_KEY=${YANDEX_API_KEY}
+      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=voix
+      - POSTGRES_PASSWORD=voixpassword
+      - POSTGRES_DB=voix
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voix -d voix"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
