@@ -74,6 +74,16 @@ VoxEngine.addEventListener(AppEvents.Started, function(e) {
   if (data.yandexFolderId) CONFIG.llm.yandexFolderId = data.yandexFolderId;
   if (data.elevenLabsApiKey) CONFIG.elevenLabsApiKey = data.elevenLabsApiKey;
   if (data.voiceId) CONFIG.voiceId = data.voiceId;
+  if (data.systemPrompt) CONFIG.systemPrompt = data.systemPrompt;
+  if (data.greeting) {
+    CONFIG.fullGreeting = data.greeting;
+    // Split greeting into parts for streaming playback
+    CONFIG.greetingParts = data.greeting.split(/[.!?]+/).filter(function(s) {
+      return s.trim().length > 0;
+    }).map(function(s) {
+      return s.trim() + '.';
+    });
+  }
 
   if (!data.phone) {
     Logger.write('No phone number');

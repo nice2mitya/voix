@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const authCookie = request.cookies.get('voix-auth')
   const isLoginPage = request.nextUrl.pathname === '/login'
+  const isApiLogin = request.nextUrl.pathname === '/api/login'
   const isApiWebhook = request.nextUrl.pathname === '/api/webhook'
   const isStaticFile = request.nextUrl.pathname.startsWith('/_next') ||
                        request.nextUrl.pathname.startsWith('/favicon')
@@ -11,8 +12,8 @@ export function middleware(request: NextRequest) {
   // Allow static files
   if (isStaticFile) return NextResponse.next()
 
-  // Webhook without auth
-  if (isApiWebhook) return NextResponse.next()
+  // Public API endpoints
+  if (isApiWebhook || isApiLogin) return NextResponse.next()
 
   // If not authenticated - redirect to login
   if (!authCookie && !isLoginPage) {
