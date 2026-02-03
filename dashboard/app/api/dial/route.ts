@@ -7,9 +7,10 @@ function buildTaskPrompt(task: string, assistantName: string): string {
 
 ХАРАКТЕР: дружелюбная, тёплая, немного игривая, но деловая. Говоришь мягко и с улыбкой в голосе.
 
-ЗАДАЧА: ${task}
+ТВОЯ ЕДИНСТВЕННАЯ ЗАДАЧА В ЭТОМ ЗВОНКЕ: ${task}
 
 ВАЖНО:
+- Следуй ТОЛЬКО задаче выше. Не спрашивай про другие темы.
 - Если человек дал конкретный ответ на твою задачу — радостно подтверди и попрощайся
 - Если ответ неполный — мягко уточни детали
 - При отказе — понимающе попрощайся
@@ -18,6 +19,10 @@ function buildTaskPrompt(task: string, assistantName: string): string {
 ФОРМАТ: только одно предложение, без кавычек, без ролей.
 
 ФИШЕЧКИ: используй живые фразы типа "Записала!", "Ловлю!", "Поняла!"`
+}
+
+function buildTaskGreeting(task: string, assistantName: string): string {
+  return `Алло, здравствуйте! Это ${assistantName}, ассистент Мити Амбарцумяна. Митя просил узнать: ${task}`
 }
 
 export async function POST(req: Request) {
@@ -43,10 +48,15 @@ export async function POST(req: Request) {
       )
     }
 
-    // If a custom task/prompt is provided, wrap it into a full system prompt
+    const name = settings?.assistantName || 'Аиша'
+
+    // If a custom task is provided, build matching prompt AND greeting
     const finalPrompt = systemPrompt
-      ? buildTaskPrompt(systemPrompt, settings?.assistantName || 'Аиша')
+      ? buildTaskPrompt(systemPrompt, name)
       : settings?.systemPrompt
+
+    const finalGreeting = greeting
+      || (systemPrompt ? buildTaskGreeting(systemPrompt, name) : settings?.greeting)
 
     const customData = JSON.stringify({
       phone,
@@ -56,7 +66,7 @@ export async function POST(req: Request) {
       elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
       voiceId: settings?.voiceId || 'rsotas5V9CH0fqkg0oNZ',
       systemPrompt: finalPrompt,
-      greeting: greeting || settings?.greeting,
+      greeting: finalGreeting,
       webhookUrl: process.env.WEBHOOK_URL,
     })
 
