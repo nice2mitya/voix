@@ -4,7 +4,7 @@ import { startScenarios } from '@/lib/voximplant'
 
 export async function POST(req: Request) {
   try {
-    const { phone } = await req.json()
+    const { phone, systemPrompt, greeting } = await req.json()
 
     if (!phone) {
       return NextResponse.json(
@@ -32,8 +32,8 @@ export async function POST(req: Request) {
       yandexFolderId: process.env.YANDEX_FOLDER_ID,
       elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
       voiceId: settings?.voiceId || 'rsotas5V9CH0fqkg0oNZ',
-      systemPrompt: settings?.systemPrompt,
-      greeting: settings?.greeting,
+      systemPrompt: systemPrompt || settings?.systemPrompt,
+      greeting: greeting || settings?.greeting,
       webhookUrl: process.env.WEBHOOK_URL,
     })
 
