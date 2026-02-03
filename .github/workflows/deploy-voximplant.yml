@@ -9,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: VOXIMPLANT_ACCOUNT_ID
 
     steps:
       - uses: actions/checkout@v4

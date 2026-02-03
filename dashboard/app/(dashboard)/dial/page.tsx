@@ -4,12 +4,16 @@ import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Phone, Loader2 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Phone, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function DialPage() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [showCustom, setShowCustom] = useState(false)
+  const [customPrompt, setCustomPrompt] = useState('')
+  const [customGreeting, setCustomGreeting] = useState('')
 
   const handleDial = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,10 +21,14 @@ export default function DialPage() {
     setResult(null)
 
     try {
+      const body: Record<string, string> = { phone: getCleanPhone() }
+      if (customPrompt.trim()) body.systemPrompt = customPrompt.trim()
+      if (customGreeting.trim()) body.greeting = customGreeting.trim()
+
       const res = await fetch('/api/dial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify(body),
       })
 
       const data = await res.json()
@@ -57,7 +65,7 @@ export default function DialPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-lg mx-auto">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -83,6 +91,48 @@ export default function DialPage() {
                 Номер: {getCleanPhone()}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowCustom(!showCustom)}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showCustom ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              Настройки для этого звонка
+            </button>
+
+            {showCustom && (
+              <div className="space-y-3 border rounded-md p-3 bg-muted/30">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Задача для звонка
+                  </label>
+                  <Textarea
+                    placeholder="Например: Узнай, когда удобно встретиться на кофе в эту пятницу"
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Если пусто — используется промпт из настроек
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Приветствие
+                  </label>
+                  <Textarea
+                    placeholder="Например: Привет! Это Аиша, ассистент Мити. Митя хотел узнать..."
+                    value={customGreeting}
+                    onChange={(e) => setCustomGreeting(e.target.value)}
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Если пусто — используется приветствие из настроек
+                  </p>
+                </div>
+              </div>
+            )}
 
             {result && (
               <div
