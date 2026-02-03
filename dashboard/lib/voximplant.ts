@@ -13,10 +13,17 @@ export async function startScenarios({ ruleId, customData }: StartScenariosParam
     throw new Error('Voximplant credentials not configured')
   }
 
-  const response = await fetch(
-    `${VOXIMPLANT_BASE_URL}/StartScenarios?account_id=${accountId}&api_key=${apiKey}&rule_id=${ruleId}&script_custom_data=${encodeURIComponent(customData)}`,
-    { method: 'POST' }
-  )
+  const params = new URLSearchParams()
+  params.append('account_id', accountId)
+  params.append('api_key', apiKey)
+  params.append('rule_id', ruleId)
+  params.append('script_custom_data', customData)
+
+  const response = await fetch(`${VOXIMPLANT_BASE_URL}/StartScenarios`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  })
 
   if (!response.ok) {
     const text = await response.text()
