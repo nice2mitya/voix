@@ -104,13 +104,19 @@ VoxEngine.addEventListener(AppEvents.Started, function(e) {
   call.addEventListener(CallEvents.Connected, onConnected);
   call.addEventListener(CallEvents.Disconnected, function() {
     Logger.write('=== End ===');
-    VoxEngine.terminate();
+    // Delay terminate to allow webhook to complete
+    setTimeout(function() {
+      VoxEngine.terminate();
+    }, 3000);
   });
   call.addEventListener(CallEvents.Failed, function(e) {
     Logger.write('Call failed: ' + e.code);
     callResult = 'no_answer';
     sendWebhook('failed');
-    VoxEngine.terminate();
+    // Delay terminate to allow webhook to complete
+    setTimeout(function() {
+      VoxEngine.terminate();
+    }, 3000);
   });
 });
 
