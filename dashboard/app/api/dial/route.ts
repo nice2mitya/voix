@@ -70,6 +70,10 @@ export async function POST(req: Request) {
       webhookUrl: process.env.WEBHOOK_URL,
     })
 
+    console.log('Dial customData length:', customData.length)
+    console.log('Dial systemPrompt:', systemPrompt ? 'custom task' : 'from settings')
+    console.log('Dial greeting:', greeting ? 'custom' : (systemPrompt ? 'auto-generated' : 'from settings'))
+
     const result = await startScenarios({ ruleId, customData })
 
     return NextResponse.json({ success: true, result })
